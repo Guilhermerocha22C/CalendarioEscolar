@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+    <title>Calendário Escolar 2025</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        .calendar-day {
+            transition: all 0.2s ease-in-out;
+            height: 120px;
+        }
+        
+        .calendar-day:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .has-events {
+            position: relative;
+        }
+        
+        .has-events::after {
+            content: '';
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background-color: #3b82f6;
+            border-radius: 50%;
+        }
+        
+        .today {
+            border: 2px solid #3b82f6 !important;
+        }
+        
+        .modal-animation {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans">
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+        <header class="mb-10">
+            <div class="flex flex-col items-center justify-center">
+                <h1 class="text-4xl md:text-5xl font-bold text-center bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">Calendário Escolar 2025</h1>
+                <div class="h-1 w-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full mb-3"></div>
+                <p class="text-center text-slate-600 max-w-xl">Registre e organize todas as atividades da turma neste calendário interativo digital.</p>
+            </div>
+        </header>
+
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div class="flex items-center shadow-md rounded-lg overflow-hidden">
+                <button id="prev-month" class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-3 focus:outline-none flex items-center justify-center transition duration-200">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div id="current-month-year" class="bg-white text-center font-bold text-xl px-8 py-3 border-t border-b min-w-[180px]">Janeiro 2025</div>
+                <button id="next-month" class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-3 focus:outline-none flex items-center justify-center transition duration-200">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            
+            <div class="flex gap-2">
+                <button id="today-btn" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-3 rounded-lg focus:outline-none shadow-md transition duration-200 flex items-center">
+                    <i class="fas fa-calendar-day mr-2"></i> Hoje
+                </button>
+                <button id="add-event-btn" class="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-5 py-3 rounded-lg focus:outline-none shadow-md transition duration-200 flex items-center">
+                    <i class="fas fa-plus mr-2"></i> Nova Atividade
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-xl overflow-hidden">
+            <div class="grid grid-cols-7 gap-px bg-slate-200">
+                <div class="text-center p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold">Dom</div>
+                <div class="text-center p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold">Seg</div>
+                <div class="text-center p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold">Ter</div>
+                <div class="text-center p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold">Qua</div>
+                <div class="text-center p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold">Qui</div>
+                <div class="text-center p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold">Sex</div>
+                <div class="text-center p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold">Sáb</div>
+            </div>
+            <div id="calendar-grid" class="grid grid-cols-7 gap-px bg-slate-200">
+                <!-- Os dias do calendário serão inseridos aqui via JavaScript -->
+            </div>
+        </div>
+
+        <div id="activity-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50">
+            <div class="bg-white rounded-xl w-full max-w-md p-6 relative shadow-2xl modal-animation">
+                <button id="close-modal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition duration-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+                <h2 id="modal-title" class="text-2xl font-bold mb-5 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Atividades para 01/01/2025</h2>
+                
+                <div id="activity-list" class="mb-6 max-h-60 overflow-y-auto">
+
+                </div>
+                
+                <div class="mb-4">
+                    <label for="activity-title" class="block text-slate-700 font-semibold mb-2">Nova Atividade:</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                            <i class="fas fa-book"></i>
+                        </span>
+                        <input type="text" id="activity-title" class="w-full p-3 pl-10 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Título da atividade">
+                    </div>
+                </div>
+                
+                <div class="mb-5">
+                    <label for="activity-description" class="block text-slate-700 font-semibold mb-2">Descrição:</label>
+                    <div class="relative">
+                        <span class="absolute top-3 left-3 text-slate-400">
+                            <i class="fas fa-align-left"></i>
+                        </span>
+                        <textarea id="activity-description" class="w-full p-3 pl-10 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="3" placeholder="Descreva a atividade..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button id="cancel-activity" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-2 rounded-lg focus:outline-none transition duration-200 mr-2">
+                        Cancelar
+                    </button>
+                    <button id="save-activity" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-2 rounded-lg focus:outline-none shadow-md transition duration-200">
+                        <i class="fas fa-save mr-2"></i> Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
